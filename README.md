@@ -151,4 +151,4 @@ python epub_analyzer_refactored.py "你的小说.epub" --api-key "你的API密�
 * 然后运行python -m http.server 7000
 
 ## 致谢
-感谢FunnyCups，TB，banlan等大佬提供的支持（排名不分先后），这个项目才能够诞生
+感谢FunnyCups，TB，banlan，Lazy_Craft等大佬提供的支持（排名不分先后），这个项目才能够诞生

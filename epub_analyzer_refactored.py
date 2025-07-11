@@ -78,6 +78,7 @@ class Config:
         self.long_chapter_threshold: int = 6000 # 长章节分段阈值
         
         self.prompt: str = settings.get("prompt", self._get_default_prompt())
+        self.use_json_schema: bool = settings.get("use_json_schema", False)
 
     @staticmethod
     def from_args(args: argparse.Namespace) -> 'Config':
@@ -97,6 +98,7 @@ class Config:
             "output": self.output_path,
             "report": self.report_path,
             "prompt": self.prompt,
+            "use_json_schema": self.use_json_schema,
         }
 
     def _get_default_prompt(self) -> str:
@@ -438,25 +440,65 @@ class APIHandler:
         }
 
     def analyze_content(self, content: str) -> Optional[Dict]:
-        """调用API分析内容，使用JSON模式以确保严格的输出格式"""
-        full_prompt = self.config.prompt + content
+        """调用API分析内容，根据配置选择是否使用JSON Schema"""
         
-        # 优化的系统提示，强调JSON输出
         system_prompt = (
             "你是一个专门用于文本分析的API端点。你的唯一任务是根据用户提供的内容，"
             "返回一个严格符合JSON格式的字符串。不要添加任何解释、注释或Markdown标记。"
             "你的输出必须能够直接被json.loads()解析。"
         )
 
-        # API参数，启用JSON模式并降低随机性
         api_params = {
             "temperature": 0.1,
             "max_tokens": self.config.max_tokens,
-            "response_format": {"type": "json_object"}
         }
-        
+
+        if self.config.use_json_schema:
+            logger.info("正在调用API并启用JSON Schema模式...")
+            # 在Schema模式下，使用一个更简洁的、不包含格式描述的提示词
+            schema_prompt = """
+你现在需要分析这篇内容并完成下面的任务，你需要选取人生感悟或者是恋爱方法经验等，保留上下文。如果没有可以再金句那里设置一个空列表
+请注意：
+1.请勿包含故事情节：样例：
+1>虽然他不知道别的小说作者是怎么样的，但他平时就喜欢去更多的地方，见更多的风景，这样才能写出来更加精彩的故事。
+2>不知不觉中，苏白粥的心情变得十分安逸，之前的不愉快已经烟消云散。
+2.你的目的是保存金句让人感觉有价值的，不是保留人物的无用对话等
+章节内容如下：
+"""
+            full_prompt = schema_prompt + content
+            api_params["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "novel_analysis_response",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "chapter_title": {"type": "string"},
+                            "golden_sentences": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "sentence": {"type": "string"},
+                                        "speaker": {"type": "string"},
+                                        "reason": {"type": "string"}
+                                    },
+                                    "required": ["sentence", "speaker", "reason"]
+                                }
+                            },
+                            "chapter_summary": {"type": "string"}
+                        },
+                        "required": ["chapter_title", "golden_sentences", "chapter_summary"]
+                    },
+                    "strict": True,
+                }
+            }
+        else:
+            logger.info("正在调用API并启用标准JSON模式...")
+            full_prompt = self.config.prompt + content
+            api_params["response_format"] = {"type": "json_object"}
+
         try:
-            logger.info("正在调用API并启用JSON模式...")
             response = self._call_api(
                 messages=[
                     {"role": "system", "content": system_prompt},
@@ -470,11 +512,9 @@ class APIHandler:
 
             result_text = response['choices'][0]['message']['content']
             
-            # 检查是否因长度截断
             if response['choices'][0].get('finish_reason') == "length":
                 logger.warning("API响应因达到max_tokens而被截断。建议增加 --max-tokens 的值。")
 
-            # 由于启用了JSON模式，可以直接解析
             parsed_json = self._parse_api_response(result_text)
             if not isinstance(parsed_json, dict):
                  raise TypeError(f"解析后的JSON不是一个字典，而是 {type(parsed_json)}")
@@ -482,7 +522,7 @@ class APIHandler:
 
         except SensitiveWordsError as e:
             logger.error(f"章节内容包含敏感词，已被API拒绝: {e}")
-            raise # 直接向上抛出，由调用者处理
+            raise
         except Exception as e:
             logger.error(f"API调用或解析失败: {e}\n{traceback.format_exc()}")
             raise
@@ -988,7 +1028,8 @@ class InteractiveMode:
             "max_tokens": 3000,
             "timeout": 180.0,
             "delay": 2.0,
-            "prompt": self._get_default_prompt()
+            "prompt": self._get_default_prompt(),
+            "use_json_schema": False
         }
         loaded_config = load_config_from_file(CONFIG_FILE)
         # 合并配置：以默认配置为基础，用加载的配置覆盖
@@ -1104,6 +1145,8 @@ class InteractiveMode:
             for i, key in enumerate(editable_keys, 1):
                 value = self.config_data[key]
                 display_value = '*****' if 'key' in key and value else value
+                if isinstance(value, bool):
+                    display_value = "✅ 已启用" if value else "❌ 已禁用"
                 print(f"{i}. {key}: {display_value}")
             
             base_index = len(editable_keys)
@@ -1123,13 +1166,19 @@ class InteractiveMode:
                     # 尝试将输入转换为原始值的类型
                     original_value = self.config_data[key_to_edit]
                     try:
-                        if isinstance(original_value, (int, float)):
-                             self.config_data[key_to_edit] = type(original_value)(new_value_str)
+                        if isinstance(original_value, bool):
+                            if new_value_str.lower() in ['true', 'yes', 'y', '1', 'on']:
+                                self.config_data[key_to_edit] = True
+                            elif new_value_str.lower() in ['false', 'no', 'n', '0', 'off']:
+                                self.config_data[key_to_edit] = False
+                            else:
+                                logger.warning("无效的布尔值输入。请输入 'yes' 或 'no'。")
+                        elif isinstance(original_value, (int, float)):
+                                self.config_data[key_to_edit] = type(original_value)(new_value_str)
                         else:
-                             self.config_data[key_to_edit] = new_value_str
+                                self.config_data[key_to_edit] = new_value_str
                     except ValueError:
-                        logger.error(f"输入的值 '{new_value_str}' 类型不正确，应为数字。已忽略更改。")
-
+                        logger.error(f"输入的值 '{new_value_str}' 类型不正确。已忽略更改。")
                 elif choice_int == base_index + 1:
                     self._edit_prompt_in_editor()
                 elif choice_int == base_index + 2:
