@@ -1,0 +1,336 @@
+* {
+    box-sizing: border-box;
+}
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    display: flex;
+    flex-direction: column; /* Allow footer to be at the bottom */
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    background-image: url('https://api.xsot.cn/bing?jump=true');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    transition: background-image 1s ease-in-out;
+}
+
+body.light-theme .container {
+    background-color: rgba(255, 255, 255, 0.7);
+    color: #333;
+}
+
+body.light-theme #sentence-text,
+body.light-theme .speaker,
+body.light-theme .chapter-title {
+    text-shadow: none;
+}
+
+body.light-theme .speaker {
+    color: #555;
+}
+
+body.light-theme .chapter-title {
+    color: #777;
+}
+
+body.light-theme #refresh-btn,
+body.light-theme .icon-btn {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-color: #ccc;
+    color: #333;
+}
+
+.container {
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 20px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    max-width: 600px;
+    margin: auto 10px; /* Center container and add spacing */
+    transition: background-color 0.5s, color 0.5s;
+}
+
+.card {
+    background-color: transparent;
+    padding: 40px;
+    border-radius: 10px;
+    max-width: 600px;
+    margin-bottom: 20px;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#sentence-text {
+    font-size: 2em;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.speaker {
+    font-size: 1.2em;
+    color: #eee;
+    text-align: right;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.chapter-title {
+    font-size: 0.9em;
+    color: #ccc;
+    text-align: right;
+    margin-top: 10px;
+}
+
+.actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+#refresh-btn, .icon-btn {
+    padding: 12px 24px;
+    font-size: 1.1em;
+    color: white;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid white;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s ease-out;
+}
+
+#refresh-btn:hover, .icon-btn:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-2px);
+}
+
+.icon-btn {
+    padding: 12px;
+    position: relative; /* For tooltip positioning */
+}
+
+#show-favorites-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 15px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.favorites-container {
+    display: none;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 20px;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.5);
+    overflow-y: auto;
+    color: white;
+    z-index: 1001;
+}
+
+#favorites-list {
+    list-style: none;
+    padding: 0;
+}
+
+#favorites-list li {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+.favorite-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.favorite-item-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.icon-btn-small {
+    padding: 5px;
+    font-size: 0.9em;
+    background-color: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    position: relative;
+}
+
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1002;
+}
+
+.toast {
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    opacity: 0;
+    transition: opacity 0.5s;
+    max-width: 250px; /* Set a max-width to trigger wrapping */
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+.toast.show {
+    opacity: 1;
+}
+/* Tooltip Styles */
+.icon-btn::before, .icon-btn::after {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    pointer-events: none !important; /* Ensure this rule is applied */
+    transition: opacity 0.2s, top 0.2s;
+}
+
+.icon-btn::before {
+    content: attr(data-tooltip);
+    background-color: #333;
+    color: white;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    white-space: nowrap;
+    bottom: 100%; /* Position above the button */
+    margin-bottom: 10px;
+}
+
+.icon-btn::after {
+    content: '';
+    border: 5px solid transparent;
+    border-top-color: #333;
+    bottom: 100%;
+    margin-bottom: 0px;
+}
+
+.icon-btn:hover::before, .icon-btn:hover::after {
+    opacity: 1;
+    bottom: 120%;
+}
+
+.settings-panel {
+    display: none;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 20px;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.5);
+    z-index: 1001;
+}
+
+.settings-panel h2 {
+    margin-top: 0;
+    text-align: center;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.setting-item span {
+    font-size: 1.1em;
+}
+
+.setting-item button {
+    padding: 5px 10px;
+    font-size: 1em;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid white;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+}
+
+.setting-item button:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+#close-settings-btn {
+    width: 100%;
+    padding: 10px;
+    margin-top: 20px;
+}
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+        margin: 0 10px;
+    }
+
+    .card {
+        padding: 15px;
+    }
+
+    #sentence-text {
+        font-size: 1.3em;
+    }
+
+    .speaker {
+        font-size: 1em;
+    }
+
+    .actions {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    #refresh-btn, .icon-btn {
+        padding: 10px 15px;
+        font-size: 1em;
+    }
+
+    .favorites-container, .settings-panel {
+        width: 100%;
+        border-radius: 0;
+    }
+}
+.visitor-stats {
+    width: 100%;
+    text-align: center;
+    padding: 5px 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #ccc;
+    font-size: 0.9em;
+    margin-top: auto; /* Push to the bottom */
+    transition: background-color 0.5s, color 0.5s;
+}
+
+body.light-theme .visitor-stats {
+    background-color: rgba(255, 255, 255, 0.7);
+    color: #333;
+}
+
+.visitor-stats p {
+    margin: 5px 0;
+}

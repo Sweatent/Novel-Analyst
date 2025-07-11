@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一言</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script defer src="https://events.vercount.one/js"></script>
+</head>
+<body>
+    <div class="container">
+        <div id="sentence-card" class="card">
+            <p id="sentence-text">正在加载...</p>
+            <p id="sentence-speaker" class="speaker"></p>
+            <p id="chapter-title" class="chapter-title" style="display: none;"></p>
+        </div>
+        <div class="actions">
+            <button id="favorite-btn" class="icon-btn" data-tooltip="收藏">⭐</button>
+            <button id="refresh-btn">刷新</button>
+            <button id="copy-btn" class="icon-btn" data-tooltip="复制">📋</button>
+            <button id="view-source-btn" class="icon-btn" data-tooltip="查看出处">📖</button>
+            <button id="settings-btn" class="icon-btn" data-tooltip="设置">⚙️</button>
+        </div>
+    </div>
+    <div id="favorites-container" class="favorites-container" style="display: none;">
+        <h2>收藏夹</h2>
+        <ul id="favorites-list"></ul>
+        <button id="close-favorites-btn">关闭</button>
+    </div>
+    <button id="show-favorites-btn">查看收藏</button>
+    <div id="settings-panel" class="settings-panel" style="display: none;">
+        <h2>设置</h2>
+        <div class="setting-item">
+            <span>字体大小</span>
+            <div>
+                <button id="decrease-font-size-btn">A-</button>
+                <button id="increase-font-size-btn">A+</button>
+                <button id="reset-font-size-btn">重置</button>
+            </div>
+        </div>
+        <div class="setting-item">
+            <span>主题切换</span>
+            <button id="theme-toggle-btn">☀️ / 🌙</button>
+        </div>
+        <button id="close-settings-btn">关闭</button>
+    </div>
+    <div id="toast-container" class="toast-container"></div>
+    <script src="script.js"></script>
+    <footer class="visitor-stats">
+        <p>本站访客统计: <span id="vercount_value_site_uv">Loading</span></p>
+    </footer>
+</body>
+</html>

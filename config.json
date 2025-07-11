@@ -1,0 +1,12 @@
+{
+    "api_key": "",
+    "base_url": "https://api.openai.com/v1",
+    "model": "gemini-2.5-pro",
+    "epub_path": "",
+    "output": "analysis_results_refactored.json",
+    "report": "analysis_report_refactored.md",
+    "max_tokens": 5000,
+    "timeout": 180.0,
+    "delay": 2.0,
+    "prompt": "\n你现在需要分析这篇内容并完成下面的任务，你需要选取人生感悟或者是恋爱方法经验等，保留上下文。如果没有可以再金句那里设置一个空列表\n请注意：\n1.请勿包含故事情节：样例：\n1>虽然他不知道别的小说作者是怎么样的，但他平时就喜欢去更多的地方，见更多的风景，这样才能写出来更加精彩的故事。\n2>不知不觉中，苏白粥的心情变得十分安逸，之前的不愉快已经烟消云散。\n2.你的目的是保存金句让人感觉有价值的，不是保留人物的无用对话等\n请严格遵守以下JSON格式要求（请勿在JSON内部添加任何注释）：\n\n<JSON>\n{\n    \"chapter_title\": \"在此处填写章节标题\",\n    \"golden_sentences\": [\n        {\n            \"sentence\": \"在此处填写黄金句子的纯文本内容\",\n            \"speaker\": \"在此处填写句子来源（角色名/旁白等，你也可以根据上下文判断）\",\n            \"reason\": \"在此处填写选择该句的恋爱理由\"\n        }\n    ],\n    \"chapter_summary\": \"在此处填写本章的恋爱主线总结\"\n}\n</JSON>\n章节内容如下：\n"
+}
